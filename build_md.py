@@ -85,7 +85,7 @@ def ocr_all(pdf, work_dir, dpi):
     )
     print("Importing PaddleOCR (first run downloads models)...")
     from paddleocr import PaddleOCR
-    ocr = PaddleOCR(use_angle_cls=True, lang='ch', use_gpu=False)
+    ocr = PaddleOCR(use_angle_cls=True, lang='ch')
     pngs = sorted(glob.glob(os.path.join(work_dir, "p-*.png")))
     pages = {}
     print(f"OCRing {len(pngs)} pages...")
