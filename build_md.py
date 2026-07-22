@@ -95,7 +95,7 @@ def ocr_all(pdf, work_dir, dpi):
         img = ImageOps.autocontrast(img, cutoff=2)
         tmp = os.path.join(work_dir, f"tmp_{n:03d}.png")
         img.save(tmp)
-        result = ocr.ocr(tmp, cls=True)
+        result = ocr.ocr(tmp)
         pages[n] = extract_page_text(result)
         os.remove(tmp)
         if (idx + 1) % 20 == 0:
