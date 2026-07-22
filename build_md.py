@@ -6,7 +6,6 @@ Usage:
 Dependencies: paddlepaddle, paddleocr, pillow, jieba, poppler-utils (pdftoppm)
 """
 import re, os, sys, glob, argparse, subprocess
-from PIL import Image, ImageOps
 
 # ========== CONSTANTS ==========
 COVER = "许二木海龟汤合集\n作者/许二木 编者/长安\n"
@@ -74,7 +73,7 @@ def assign_code(n):
         m -= size
     return ("4", "01")
 
-# ========== PADDLE OCR ==========
+# ========== EASY OCR ==========
 def ocr_all(pdf, work_dir, dpi):
     os.makedirs(work_dir, exist_ok=True)
     prefix = os.path.join(work_dir, "p")
@@ -83,31 +82,26 @@ def ocr_all(pdf, work_dir, dpi):
         ["pdftoppm", "-png", "-r", str(dpi), pdf, prefix],
         check=True
     )
-    print("Importing PaddleOCR (first run downloads models)...")
-    from paddleocr import PaddleOCR
-    ocr = PaddleOCR(use_angle_cls=True, lang='ch')
+    print("Importing EasyOCR (first run downloads models)...")
+    import easyocr
+    reader = easyocr.Reader(['ch_sim'], gpu=False)
     pngs = sorted(glob.glob(os.path.join(work_dir, "p-*.png")))
     pages = {}
     print(f"OCRing {len(pngs)} pages...")
     for idx, fpath in enumerate(pngs):
         n = int(re.search(r"(\d+)", os.path.basename(fpath)).group(1))
-        img = Image.open(fpath).convert("L")
-        img = ImageOps.autocontrast(img, cutoff=2)
-        tmp = os.path.join(work_dir, f"tmp_{n:03d}.png")
-        img.save(tmp)
-        result = ocr.ocr(tmp)
+        result = reader.readtext(fpath)
         pages[n] = extract_page_text(result)
-        os.remove(tmp)
         if (idx + 1) % 20 == 0:
             print(f"  ... {idx+1}/{len(pngs)} done")
     return pages
 
-def extract_page_text(ocr_result):
-    if not ocr_result or not ocr_result[0]:
+def extract_page_text(blocks):
+    """Convert EasyOCR blocks (sorted by position) into page text."""
+    if not blocks:
         return ""
-    blocks = ocr_result[0]
     items = []
-    for bbox, (text, conf) in blocks:
+    for bbox, text, conf in blocks:
         ys = [p[1] for p in bbox]
         xs = [p[0] for p in bbox]
         y_avg = sum(ys) / 4
