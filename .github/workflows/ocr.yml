@@ -1,0 +1,45 @@
+name: OCR Build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'build_md.py'
+      - '*.pdf'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+
+      - name: Install Python deps
+        run: |
+          pip install --quiet paddlepaddle paddleocr pillow jieba
+          echo "=== Verify ==="
+          python3 -c "from paddleocr import PaddleOCR; print('PaddleOCR ready')"
+          python3 -c "import jieba; print('jieba ready')"
+
+      - name: Run OCR build
+        run: |
+          python3 build_md.py --pdf 7.19虾滑汤.pdf --dpi 300 --out-dir .
+
+      - name: Commit results
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add "*.md"
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "auto-build from Actions [skip actions]"
+            git push
+          fi
