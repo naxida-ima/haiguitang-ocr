@@ -14,7 +14,7 @@ OUT_MD = "许二木海龟汤合集.md"
 OUT_DIAG = "OCR_不连贯标注.md"
 SEASON_SIZES = [(1, 23), (2, 37), (3, 79), (4, 1)]
 
-re_q = re.compile(r"([《«(])([^》»)]{1,30})([》»)]")
+re_q = re.compile(r"[《«(]([^》»)]{1,30})[》»)]")
 re_code = re.compile(
     r"(?:S[0-9]?\s*[1lI]?\s*|[0-9]\s*|规则怪谈\s*|灵之残响\s*|残响\s*)E\s*[0-9A-Za-z]{1,3}"
 )
@@ -153,7 +153,7 @@ def looks_like_title(L):
     q = re_q.search(L)
     if not q:
         return False
-    t = q.group(2)  # title content between 《》
+    t = q.group(1)  # title content between 《》
     if cjkc(t) < 1 and len(re.sub(r"[^A-Za-z0-9]", "", t)) < 2:
         return False
     return bool(re_code.search(L))
