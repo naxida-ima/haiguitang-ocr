@@ -6,6 +6,7 @@ Usage:
 Dependencies: paddlepaddle, paddleocr, pillow, jieba, poppler-utils (pdftoppm)
 """
 import re, os, sys, glob, argparse, subprocess
+from PIL import Image, ImageFilter, ImageOps
 
 # ========== CONSTANTS ==========
 COVER = "许二木海龟汤合集\n作者/许二木 编者/长安\n"
@@ -82,34 +83,32 @@ def ocr_all(pdf, work_dir, dpi):
         ["pdftoppm", "-png", "-r", str(dpi), pdf, prefix],
         check=True
     )
-    print("Importing RapidOCR (ONNX Runtime)...")
-    from rapidocr_onnxruntime import RapidOCR
-    engine = RapidOCR()
     pngs = sorted(glob.glob(os.path.join(work_dir, "p-*.png")))
     pages = {}
-    print(f"OCRing {len(pngs)} pages...")
+    print(f"OCRing {len(pngs)} pages with tesseract + enhanced preprocessing...")
     for idx, fpath in enumerate(pngs):
         n = int(re.search(r"(\d+)", os.path.basename(fpath)).group(1))
-        result, _ = engine(fpath)
-        if result is None:
-            result = []
-        pages[n] = extract_page_text(result)
+        # Preprocess: grayscale → autocontrast → 2x upscale → sharpen
+        img = Image.open(fpath).convert("L")
+        img = ImageOps.autocontrast(img, cutoff=2)
+        w, h = img.size
+        img = img.resize((w * 2, h * 2), Image.LANCZOS)
+        img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=100, threshold=2))
+        tmp = os.path.join(work_dir, f"tmp_{n:03d}.png")
+        img.save(tmp)
+        out = subprocess.run(
+            ["tesseract", tmp, "stdout", "--psm", "6", "-l", "chi_sim"],
+            capture_output=True, text=True
+        )
+        pages[n] = out.stdout
+        os.remove(tmp)
         if (idx + 1) % 20 == 0:
             print(f"  ... {idx+1}/{len(pngs)} done")
     return pages
 
 def extract_page_text(blocks):
-    """Convert RapidOCR blocks (sorted by position) into page text."""
-    if not blocks:
-        return ""
-    items = []
-    for bbox, text, conf in blocks:
-        ys = [p[1] for p in bbox]
-        xs = [p[0] for p in bbox]
-        y_avg = sum(ys) / 4
-        x_avg = sum(xs) / 4
-        height = max(ys) - min(ys)
-        items.append((y_avg, x_avg, height, text))
+    # Not used with tesseract (line-by-line text output)
+    return ""
     items.sort(key=lambda x: (x[0], x[1]))
     lines = []
     cur_line = []
