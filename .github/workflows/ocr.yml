@@ -23,9 +23,9 @@ jobs:
 
       - name: Install Python deps
         run: |
-          pip install --quiet easyocr jieba
+          pip install --quiet rapidocr-onnxruntime jieba
           echo "=== Verify ==="
-          python3 -c "import easyocr; print('EasyOCR ready')"
+          python3 -c "from rapidocr_onnxruntime import RapidOCR; print('RapidOCR ready')"
           python3 -c "import jieba; print('jieba ready')"
 
       - name: Run OCR build
