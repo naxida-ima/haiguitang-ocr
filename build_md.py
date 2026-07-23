@@ -306,7 +306,7 @@ def main():
         if not looks_like_title(lines[i]):
             continue
         q = re_q.search(lines[i])
-        t = q.group(2)
+        t = q.group(1)
         raw.append({"idx": i, "title": t.strip()})
 
     SEP_TITLES = {"保姆"}
