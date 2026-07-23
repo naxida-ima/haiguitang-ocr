@@ -85,17 +85,16 @@ def ocr_all(pdf, work_dir, dpi):
     pngs = sorted(glob.glob(os.path.join(work_dir, "p-*.png")))
     pages = {}
     TESSERACT = shutil.which("tesseract") or "/usr/bin/tesseract"
-    print(f"OCRing {len(pngs)} pages with {TESSERACT} + enhanced preprocessing...")
+    print(f"OCRing {len(pngs)} pages with tesseract...")
     for idx, fpath in enumerate(pngs):
         n = int(re.search(r"(\d+)", os.path.basename(fpath)).group(1))
         # Render at 200 DPI for crisp title detection. No preprocessing needed
         # (bare tesseract --psm 6 chi_sim produces clean body + all 140 titles)
         out = subprocess.run(
-            ["tesseract", fpath, "stdout", "--psm", "6", "-l", "chi_sim"],
+            [TESSERACT, fpath, "stdout", "--psm", "6", "-l", "chi_sim"],
             capture_output=True, text=True
         )
         pages[n] = out.stdout
-        os.remove(tmp)
         if (idx + 1) % 20 == 0:
             print(f"  ... {idx+1}/{len(pngs)} done")
     return pages
