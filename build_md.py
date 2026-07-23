@@ -89,12 +89,10 @@ def ocr_all(pdf, work_dir, dpi):
     print(f"OCRing {len(pngs)} pages with {TESSERACT} + enhanced preprocessing...")
     for idx, fpath in enumerate(pngs):
         n = int(re.search(r"(\d+)", os.path.basename(fpath)).group(1))
-        # Preprocess: grayscale → autocontrast → 2x upscale → sharpen
+        # Preprocess: grayscale → autocontrast → sharpen (no upscale, keeps titles crisp)
         img = Image.open(fpath).convert("L")
         img = ImageOps.autocontrast(img, cutoff=2)
-        w, h = img.size
-        img = img.resize((w * 2, h * 2), Image.LANCZOS)
-        img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=100, threshold=2))
+        img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=80, threshold=2))
         tmp = os.path.join(work_dir, f"tmp_{n:03d}.png")
         img.save(tmp)
         out = subprocess.run(
