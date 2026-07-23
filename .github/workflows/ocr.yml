@@ -34,7 +34,7 @@ jobs:
 
       - name: Run OCR build
         run: |
-          python3 build_md.py --pdf 7.19虾滑汤.pdf --dpi 300 --out-dir .
+          python3 build_md.py --pdf 7.19虾滑汤.pdf --dpi 200 --out-dir .
 
       - name: Commit results
         run: |
