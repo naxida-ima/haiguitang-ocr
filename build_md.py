@@ -73,7 +73,7 @@ def assign_code(n):
         m -= size
     return ("4", "01")
 
-# ========== EASY OCR ==========
+# ========== RAPID OCR ==========
 def ocr_all(pdf, work_dir, dpi):
     os.makedirs(work_dir, exist_ok=True)
     prefix = os.path.join(work_dir, "p")
@@ -82,22 +82,24 @@ def ocr_all(pdf, work_dir, dpi):
         ["pdftoppm", "-png", "-r", str(dpi), pdf, prefix],
         check=True
     )
-    print("Importing EasyOCR (first run downloads models)...")
-    import easyocr
-    reader = easyocr.Reader(['ch_sim'], gpu=False)
+    print("Importing RapidOCR (ONNX Runtime)...")
+    from rapidocr_onnxruntime import RapidOCR
+    engine = RapidOCR()
     pngs = sorted(glob.glob(os.path.join(work_dir, "p-*.png")))
     pages = {}
     print(f"OCRing {len(pngs)} pages...")
     for idx, fpath in enumerate(pngs):
         n = int(re.search(r"(\d+)", os.path.basename(fpath)).group(1))
-        result = reader.readtext(fpath)
+        result, _ = engine(fpath)
+        if result is None:
+            result = []
         pages[n] = extract_page_text(result)
         if (idx + 1) % 20 == 0:
             print(f"  ... {idx+1}/{len(pngs)} done")
     return pages
 
 def extract_page_text(blocks):
-    """Convert EasyOCR blocks (sorted by position) into page text."""
+    """Convert RapidOCR blocks (sorted by position) into page text."""
     if not blocks:
         return ""
     items = []
