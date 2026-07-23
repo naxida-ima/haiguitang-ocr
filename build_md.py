@@ -5,7 +5,7 @@ Usage:
     python3 build_md.py --pdf input.pdf --dpi 300 --out-dir .
 Dependencies: paddlepaddle, paddleocr, pillow, jieba, poppler-utils (pdftoppm)
 """
-import re, os, sys, glob, argparse, subprocess
+import re, os, sys, glob, argparse, subprocess, shutil
 from PIL import Image, ImageFilter, ImageOps
 
 # ========== CONSTANTS ==========
@@ -85,7 +85,8 @@ def ocr_all(pdf, work_dir, dpi):
     )
     pngs = sorted(glob.glob(os.path.join(work_dir, "p-*.png")))
     pages = {}
-    print(f"OCRing {len(pngs)} pages with tesseract + enhanced preprocessing...")
+    TESSERACT = shutil.which("tesseract") or "/usr/bin/tesseract"
+    print(f"OCRing {len(pngs)} pages with {TESSERACT} + enhanced preprocessing...")
     for idx, fpath in enumerate(pngs):
         n = int(re.search(r"(\d+)", os.path.basename(fpath)).group(1))
         # Preprocess: grayscale → autocontrast → 2x upscale → sharpen
@@ -97,7 +98,7 @@ def ocr_all(pdf, work_dir, dpi):
         tmp = os.path.join(work_dir, f"tmp_{n:03d}.png")
         img.save(tmp)
         out = subprocess.run(
-            ["tesseract", tmp, "stdout", "--psm", "6", "-l", "chi_sim"],
+            [TESSERACT, tmp, "stdout", "--psm", "6", "-l", "chi_sim"],
             capture_output=True, text=True
         )
         pages[n] = out.stdout
