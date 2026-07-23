@@ -6,7 +6,6 @@ Usage:
 Dependencies: paddlepaddle, paddleocr, pillow, jieba, poppler-utils (pdftoppm)
 """
 import re, os, sys, glob, argparse, subprocess, shutil
-from PIL import Image, ImageFilter, ImageOps
 
 # ========== CONSTANTS ==========
 COVER = "许二木海龟汤合集\n作者/许二木 编者/长安\n"
@@ -89,14 +88,10 @@ def ocr_all(pdf, work_dir, dpi):
     print(f"OCRing {len(pngs)} pages with {TESSERACT} + enhanced preprocessing...")
     for idx, fpath in enumerate(pngs):
         n = int(re.search(r"(\d+)", os.path.basename(fpath)).group(1))
-        # Preprocess: grayscale → autocontrast → sharpen (no upscale, keeps titles crisp)
-        img = Image.open(fpath).convert("L")
-        img = ImageOps.autocontrast(img, cutoff=2)
-        img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=80, threshold=2))
-        tmp = os.path.join(work_dir, f"tmp_{n:03d}.png")
-        img.save(tmp)
+        # Render at 200 DPI for crisp title detection. No preprocessing needed
+        # (bare tesseract --psm 6 chi_sim produces clean body + all 140 titles)
         out = subprocess.run(
-            [TESSERACT, tmp, "stdout", "--psm", "6", "-l", "chi_sim"],
+            ["tesseract", fpath, "stdout", "--psm", "6", "-l", "chi_sim"],
             capture_output=True, text=True
         )
         pages[n] = out.stdout
@@ -267,7 +262,7 @@ def build_diag_md(results):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--pdf", default="7.19虾滑汤.pdf")
-    parser.add_argument("--dpi", type=int, default=300)
+    parser.add_argument("--dpi", type=int, default=200)
     parser.add_argument("--out-dir", default=".")
     parser.add_argument("--work-dir", default="ocr_work_new")
     args = parser.parse_args()
