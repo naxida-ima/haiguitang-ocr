@@ -19,13 +19,13 @@ jobs:
       - name: Install system deps
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq poppler-utils
+          sudo apt-get install -y -qq poppler-utils tesseract-ocr tesseract-ocr-chi-sim
 
       - name: Install Python deps
         run: |
-          pip install --quiet rapidocr-onnxruntime jieba
+          pip install --quiet pillow jieba
           echo "=== Verify ==="
-          python3 -c "from rapidocr_onnxruntime import RapidOCR; print('RapidOCR ready')"
+          python3 -c "from PIL import Image, ImageFilter, ImageOps; print('PIL ready')"
           python3 -c "import jieba; print('jieba ready')"
 
       - name: Run OCR build
